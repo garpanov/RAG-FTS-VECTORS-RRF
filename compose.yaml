@@ -1,4 +1,16 @@
 services:
+  api:
+    build:
+      context: .
+    restart: ${API_RESTART_POLICY:-unless-stopped}
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: ${POSTGRES_IMAGE}
     restart: ${POSTGRES_RESTART_POLICY}
@@ -11,7 +23,6 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:${POSTGRES_DATA_DIR}
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-enable-vector.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: ${POSTGRES_HEALTHCHECK_INTERVAL}

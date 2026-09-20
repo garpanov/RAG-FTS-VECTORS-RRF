@@ -1,0 +1,32 @@
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, field_validator
+
+
+class DocumentCreate(BaseModel):
+    document_number: str
+    context: str
+
+    @field_validator("document_number", mode="before")
+    @classmethod
+    def normalize_document_number(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator("document_number", "context")
+    @classmethod
+    def reject_blank_value(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("must not be blank")
+        return value
+
+
+class DocumentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    document_number: str
+    context: str
+    created_at: datetime
