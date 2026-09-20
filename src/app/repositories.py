@@ -18,9 +18,8 @@ class DocumentRepository:
         self._session.add(document)
 
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError as error:
-            await self._session.rollback()
             if isinstance(error.orig, UniqueViolation):
                 raise DocumentNumberConflictError from error
             raise
