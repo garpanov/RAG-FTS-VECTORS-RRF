@@ -28,6 +28,18 @@ class StubDocumentService:
         )
 
 
+class StubTaskPublisher:
+    async def publish_document_created(self, document_id: int) -> None:
+        pass
+
+
+@pytest.fixture(autouse=True)
+def task_publisher() -> Generator[None]:
+    app.state.document_task_publisher = StubTaskPublisher()
+    yield
+    del app.state.document_task_publisher
+
+
 @pytest.fixture
 def service() -> Generator[StubDocumentService]:
     stub = StubDocumentService()

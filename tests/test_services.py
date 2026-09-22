@@ -16,7 +16,15 @@ class StubDocumentRepository:
     async def create(self, document_number: str, context: str) -> Document:
         if self.duplicate:
             raise DocumentNumberConflictError
-        return Document(document_number=document_number, context=context)
+        return Document(id=42, document_number=document_number, context=context)
+
+
+class StubTaskPublisher:
+    def __init__(self) -> None:
+        self.document_ids: list[int] = []
+
+    async def publish_document_created(self, document_id: int) -> None:
+        self.document_ids.append(document_id)
 
 
 class StubUnitOfWork:
@@ -42,21 +50,25 @@ class StubUnitOfWork:
 @pytest.mark.asyncio
 async def test_service_creates_document_inside_unit_of_work() -> None:
     unit_of_work = StubUnitOfWork()
-    service = DocumentService(cast(UnitOfWork, unit_of_work))
+    publisher = StubTaskPublisher()
+    service = DocumentService(cast(UnitOfWork, unit_of_work), publisher)
 
     document = await service.create_document("001-A", "context")
 
     assert unit_of_work.entered
     assert unit_of_work.received_exception is None
     assert document.document_number == "001-A"
+    assert publisher.document_ids == [42]
 
 
 @pytest.mark.asyncio
 async def test_service_maps_repository_conflict_after_transaction_rollback() -> None:
     unit_of_work = StubUnitOfWork(duplicate=True)
-    service = DocumentService(cast(UnitOfWork, unit_of_work))
+    publisher = StubTaskPublisher()
+    service = DocumentService(cast(UnitOfWork, unit_of_work), publisher)
 
     with pytest.raises(DocumentAlreadyExistsError):
         await service.create_document("001-A", "context")
 
     assert unit_of_work.received_exception is DocumentNumberConflictError
+    assert publisher.document_ids == []
