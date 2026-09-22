@@ -1,23 +1,25 @@
 # Document ingestion service
 
-Асинхронный FastAPI-сервис для сохранения номера документа и его текстового
-контекста в PostgreSQL. База работает на образе pgvector и заранее включает
-расширение `vector` через Alembic; embedding-колонки пока нет.
+Асинхронный FastAPI-сервис для сохранения документов в PostgreSQL. После
+создания документа API публикует в RabbitMQ задание на чанкинг. Отдельный
+worker уже принимает и подтверждает эти задания, но пока не разбивает текст
+на чанки и не создаёт embeddings.
 
 ## Запуск
 
 Скопируйте `.env.example` в `.env`, замените пароль, затем соберите контейнеры
-и запустите базу данных:
+и запустите инфраструктуру:
 
 ```bash
-docker compose build api
-docker compose up -d postgres
+docker compose build api worker
+docker compose up -d postgres rabbitmq
 docker compose run --rm api alembic upgrade head
-docker compose up -d api
+docker compose up -d api worker
 ```
 
 API будет доступно на `http://localhost:8000`, Swagger UI — на
-`http://localhost:8000/docs`.
+`http://localhost:8000/docs`, RabbitMQ Management — на
+`http://localhost:15672`.
 
 Миграции намеренно не применяются при старте API. После появления новой
 миграции выполните:
@@ -44,8 +46,11 @@ curl -X POST http://localhost:8000/documents \
 ```bash
 uv sync --extra dev
 export DATABASE_URL='postgresql+psycopg://rag_user:password@localhost:5432/rag_db'
+export RABBITMQ_URL='amqp://rag_user:password@localhost:5672/'
 uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
+# В другом терминале:
+uv run python -m worker.main
 ```
 
 Проверки:

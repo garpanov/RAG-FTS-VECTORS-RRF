@@ -5,11 +5,41 @@ services:
     restart: ${API_RESTART_POLICY:-unless-stopped}
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rag_user}:${RABBITMQ_PASSWORD:-change-me}@rabbitmq:5672/
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+    command: ["python", "-m", "worker.main"]
+    restart: ${WORKER_RESTART_POLICY:-unless-stopped}
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rag_user}:${RABBITMQ_PASSWORD:-change-me}@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    image: ${RABBITMQ_IMAGE:-rabbitmq:4-management}
+    restart: ${RABBITMQ_RESTART_POLICY:-unless-stopped}
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rag_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-change-me}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: ${RABBITMQ_HEALTHCHECK_INTERVAL:-10s}
+      timeout: ${RABBITMQ_HEALTHCHECK_TIMEOUT:-5s}
+      retries: ${RABBITMQ_HEALTHCHECK_RETRIES:-5}
+      start_period: ${RABBITMQ_HEALTHCHECK_START_PERIOD:-10s}
 
   postgres:
     image: ${POSTGRES_IMAGE}
