@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: PostgresDsn
-    rabbitmq_url: AmqpDsn = AmqpDsn("amqp://guest:guest@localhost:5672/")
+    rabbitmq_url: AmqpDsn
     document_chunking_queue: str = DOCUMENT_CHUNKING_QUEUE
 
 
