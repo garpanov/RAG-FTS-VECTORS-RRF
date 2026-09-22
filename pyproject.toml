@@ -23,6 +23,10 @@ dev = [
     "pytest-asyncio>=1.1.0",
     "ruff>=0.12.11",
 ]
+worker = [
+    "sentence-transformers>=2.7.0",
+    "transformers>=4.51.0",
+]
 
 [build-system]
 requires = ["setuptools>=80.9.0"]

@@ -2,6 +2,7 @@ services:
   api:
     build:
       context: .
+      target: api
     restart: ${API_RESTART_POLICY:-unless-stopped}
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -17,12 +18,24 @@ services:
   worker:
     build:
       context: .
+      target: worker
     command: ["python", "-m", "worker.main"]
     restart: ${WORKER_RESTART_POLICY:-unless-stopped}
     environment:
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-rag_user}:${RABBITMQ_PASSWORD:-change-me}@rabbitmq:5672/
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-Qwen/Qwen3-Embedding-0.6B}
+      EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
+      EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-8}
+      CHUNK_MAX_TOKENS: ${CHUNK_MAX_TOKENS:-300}
+      CHUNK_OVERLAP_TOKENS: ${CHUNK_OVERLAP_TOKENS:-30}
+      HF_HOME: /root/.cache/huggingface
+    volumes:
+      - huggingface_cache:/root/.cache/huggingface
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   rabbitmq:
@@ -62,3 +75,4 @@ services:
 
 volumes:
   postgres_data:
+  huggingface_cache:
