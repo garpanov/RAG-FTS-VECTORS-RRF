@@ -30,3 +30,27 @@ class DocumentResponse(BaseModel):
     document_number: str
     context: str
     created_at: datetime
+
+
+class SearchRequest(BaseModel):
+    question: str
+
+    @field_validator("question")
+    @classmethod
+    def reject_blank_question(cls, value: str) -> str:
+        question = value.strip()
+        if not question:
+            raise ValueError("must not be blank")
+        return question
+
+
+class ChunkResponse(BaseModel):
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    distance: float
+
+
+class SearchResponse(BaseModel):
+    chunks: list[ChunkResponse]

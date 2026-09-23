@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.14-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -9,6 +9,21 @@ COPY pyproject.toml README.md ./
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY src ./src
+
+FROM base AS worker
+
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir ".[worker]"
+
+CMD ["python", "-m", "worker.main"]
+
+FROM worker AS search-worker
+
+EXPOSE 50051
+
+CMD ["python", "-m", "search_worker.main"]
+
+FROM base AS api
 
 RUN pip install --no-cache-dir .
 
