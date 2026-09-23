@@ -45,16 +45,16 @@ def make_uow_factory(chunks: StubChunks) -> Callable[[], SearchUnitOfWork]:
 
 
 @pytest.mark.asyncio
-async def test_search_embeds_question_and_limits_results_to_three() -> None:
+async def test_search_embeds_question_and_limits_results_to_thirty() -> None:
     chunks = StubChunks()
     embedder = StubEmbedder()
     service = ChunkSearchService(make_uow_factory(chunks), embedder)
 
-    matches = await service.search("question", limit=10)
+    matches = await service.search("question", limit=100)
 
     assert embedder.texts == ["question"]
     assert chunks.embedding == [0.5] * 1024
-    assert chunks.limit == 3
+    assert chunks.limit == 30
     assert matches[0].content == "content"
 
 

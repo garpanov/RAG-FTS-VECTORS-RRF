@@ -26,7 +26,7 @@ class GrpcSearchWorkerClient:
         self._stub = search_pb2_grpc.ChunkSearchStub(self._channel)  # type: ignore[no-untyped-call]
 
     async def search(self, question: str) -> list[SearchChunk]:
-        request = search_pb2.SearchChunksRequest(question=question, limit=3)
+        request = search_pb2.SearchChunksRequest(question=question, limit=30)
         try:
             response = await self._stub.SearchChunks(request)
         except grpc.aio.AioRpcError as error:

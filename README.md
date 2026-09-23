@@ -6,7 +6,7 @@ worker читает документ, делит Markdown по структур�
 создаёт embeddings моделью `Qwen/Qwen3-Embedding-0.6B` и сохраняет чанки в
 PostgreSQL. Длинные ответы делятся максимум по 300 токенов с overlap 30.
 Отдельный `search-worker` принимает вопросы от API по gRPC, строит embedding
-той же моделью и возвращает три ближайших чанка по cosine distance.
+той же моделью и возвращает до 30 ближайших чанков по cosine distance.
 
 ## Запуск
 
@@ -53,7 +53,7 @@ curl -X POST http://localhost:8000/search \
   -d '{"question":"Какой срок действия договора?"}'
 ```
 
-API передаёт вопрос в `search-worker` по gRPC. Ответ содержит до трёх чанков,
+API передаёт вопрос в `search-worker` по gRPC. Ответ содержит до 30 чанков,
 отсортированных от наиболее близкого к менее близкому, вместе с
 `document_id`, `document_number`, `chunk_number` и cosine distance.
 
