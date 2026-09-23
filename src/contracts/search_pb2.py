@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x63ontracts/search.proto\x12\x06search\"6\n\x13SearchChunksRequest\x12\x10\n\x08question\x18\x01 \x01(\t\x12\r\n\x05limit\x18\x02 \x01(\r\"n\n\x05\x43hunk\x12\x13\n\x0b\x64ocument_id\x18\x01 \x01(\x03\x12\x17\n\x0f\x64ocument_number\x18\x02 \x01(\t\x12\x14\n\x0c\x63hunk_number\x18\x03 \x01(\x05\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\t\x12\x10\n\x08\x64istance\x18\x05 \x01(\x01\"5\n\x14SearchChunksResponse\x12\x1d\n\x06\x63hunks\x18\x01 \x03(\x0b\x32\r.search.Chunk\"\'\n\x13RerankChunksRequest\x12\x10\n\x08question\x18\x01 \x01(\t\"\x8e\x01\n\rRerankedChunk\x12\x13\n\x0b\x64ocument_id\x18\x01 \x01(\x03\x12\x17\n\x0f\x64ocument_number\x18\x02 \x01(\t\x12\x14\n\x0c\x63hunk_number\x18\x03 \x01(\x05\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\t\x12\x10\n\x08\x64istance\x18\x05 \x01(\x01\x12\x16\n\x0ereranker_score\x18\x06 \x01(\x01\"=\n\x14RerankChunksResponse\x12%\n\x06\x63hunks\x18\x01 \x03(\x0b\x32\x15.search.RerankedChunk2\xa3\x01\n\x0b\x43hunkSearch\x12I\n\x0cSearchChunks\x12\x1b.search.SearchChunksRequest\x1a\x1c.search.SearchChunksResponse\x12I\n\x0cRerankChunks\x12\x1b.search.RerankChunksRequest\x1a\x1c.search.RerankChunksResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16\x63ontracts/search.proto\x12\x06search\"6\n\x13SearchChunksRequest\x12\x10\n\x08question\x18\x01 \x01(\t\x12\r\n\x05limit\x18\x02 \x01(\r\"n\n\x05\x43hunk\x12\x13\n\x0b\x64ocument_id\x18\x01 \x01(\x03\x12\x17\n\x0f\x64ocument_number\x18\x02 \x01(\t\x12\x14\n\x0c\x63hunk_number\x18\x03 \x01(\x05\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\t\x12\x10\n\x08\x64istance\x18\x05 \x01(\x01\"5\n\x14SearchChunksResponse\x12\x1d\n\x06\x63hunks\x18\x01 \x03(\x0b\x32\r.search.Chunk\"9\n\x16SearchChunksFtsRequest\x12\x10\n\x08question\x18\x01 \x01(\t\x12\r\n\x05limit\x18\x02 \x01(\r\"m\n\x08\x46tsChunk\x12\x13\n\x0b\x64ocument_id\x18\x01 \x01(\x03\x12\x17\n\x0f\x64ocument_number\x18\x02 \x01(\t\x12\x14\n\x0c\x63hunk_number\x18\x03 \x01(\x05\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\t\x12\x0c\n\x04rank\x18\x05 \x01(\x01\";\n\x17SearchChunksFtsResponse\x12 \n\x06\x63hunks\x18\x01 \x03(\x0b\x32\x10.search.FtsChunk\"\'\n\x13RerankChunksRequest\x12\x10\n\x08question\x18\x01 \x01(\t\"\x8e\x01\n\rRerankedChunk\x12\x13\n\x0b\x64ocument_id\x18\x01 \x01(\x03\x12\x17\n\x0f\x64ocument_number\x18\x02 \x01(\t\x12\x14\n\x0c\x63hunk_number\x18\x03 \x01(\x05\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\t\x12\x10\n\x08\x64istance\x18\x05 \x01(\x01\x12\x16\n\x0ereranker_score\x18\x06 \x01(\x01\"=\n\x14RerankChunksResponse\x12%\n\x06\x63hunks\x18\x01 \x03(\x0b\x32\x15.search.RerankedChunk2\xf7\x01\n\x0b\x43hunkSearch\x12I\n\x0cSearchChunks\x12\x1b.search.SearchChunksRequest\x1a\x1c.search.SearchChunksResponse\x12R\n\x0fSearchChunksFts\x12\x1e.search.SearchChunksFtsRequest\x1a\x1f.search.SearchChunksFtsResponse\x12I\n\x0cRerankChunks\x12\x1b.search.RerankChunksRequest\x1a\x1c.search.RerankChunksResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,12 +37,18 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CHUNK']._serialized_end=200
   _globals['_SEARCHCHUNKSRESPONSE']._serialized_start=202
   _globals['_SEARCHCHUNKSRESPONSE']._serialized_end=255
-  _globals['_RERANKCHUNKSREQUEST']._serialized_start=257
-  _globals['_RERANKCHUNKSREQUEST']._serialized_end=296
-  _globals['_RERANKEDCHUNK']._serialized_start=299
-  _globals['_RERANKEDCHUNK']._serialized_end=441
-  _globals['_RERANKCHUNKSRESPONSE']._serialized_start=443
-  _globals['_RERANKCHUNKSRESPONSE']._serialized_end=504
-  _globals['_CHUNKSEARCH']._serialized_start=507
-  _globals['_CHUNKSEARCH']._serialized_end=670
+  _globals['_SEARCHCHUNKSFTSREQUEST']._serialized_start=257
+  _globals['_SEARCHCHUNKSFTSREQUEST']._serialized_end=314
+  _globals['_FTSCHUNK']._serialized_start=316
+  _globals['_FTSCHUNK']._serialized_end=425
+  _globals['_SEARCHCHUNKSFTSRESPONSE']._serialized_start=427
+  _globals['_SEARCHCHUNKSFTSRESPONSE']._serialized_end=486
+  _globals['_RERANKCHUNKSREQUEST']._serialized_start=488
+  _globals['_RERANKCHUNKSREQUEST']._serialized_end=527
+  _globals['_RERANKEDCHUNK']._serialized_start=530
+  _globals['_RERANKEDCHUNK']._serialized_end=672
+  _globals['_RERANKCHUNKSRESPONSE']._serialized_start=674
+  _globals['_RERANKCHUNKSRESPONSE']._serialized_end=735
+  _globals['_CHUNKSEARCH']._serialized_start=738
+  _globals['_CHUNKSEARCH']._serialized_end=985
 # @@protoc_insertion_point(module_scope)

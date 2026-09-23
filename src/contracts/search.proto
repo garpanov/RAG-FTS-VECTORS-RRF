@@ -4,6 +4,7 @@ package search;
 
 service ChunkSearch {
   rpc SearchChunks(SearchChunksRequest) returns (SearchChunksResponse);
+  rpc SearchChunksFts(SearchChunksFtsRequest) returns (SearchChunksFtsResponse);
   rpc RerankChunks(RerankChunksRequest) returns (RerankChunksResponse);
 }
 
@@ -22,6 +23,23 @@ message Chunk {
 
 message SearchChunksResponse {
   repeated Chunk chunks = 1;
+}
+
+message SearchChunksFtsRequest {
+  string question = 1;
+  uint32 limit = 2;
+}
+
+message FtsChunk {
+  int64 document_id = 1;
+  string document_number = 2;
+  int32 chunk_number = 3;
+  string content = 4;
+  double rank = 5;
+}
+
+message SearchChunksFtsResponse {
+  repeated FtsChunk chunks = 1;
 }
 
 message RerankChunksRequest {

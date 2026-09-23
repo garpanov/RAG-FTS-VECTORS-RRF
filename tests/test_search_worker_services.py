@@ -3,7 +3,7 @@ from typing import cast
 
 import pytest
 
-from search_worker.repositories import ChunkMatch
+from search_worker.repositories import ChunkMatch, FtsChunkMatch
 from search_worker.services import ChunkSearchService
 from search_worker.unit_of_work import SearchUnitOfWork
 
@@ -23,11 +23,18 @@ class StubChunks:
         self.embedding: list[float] | None = None
         self.limit: int | None = None
         self.matches = matches or [ChunkMatch(1, "001-A", 0, "content", 0.1)]
+        self.fts_question: str | None = None
+        self.fts_limit: int | None = None
 
     async def find_nearest(self, embedding: list[float], limit: int) -> list[ChunkMatch]:
         self.embedding = embedding
         self.limit = limit
         return self.matches
+
+    async def find_fts(self, question: str, limit: int) -> list[FtsChunkMatch]:
+        self.fts_question = question
+        self.fts_limit = limit
+        return [FtsChunkMatch(1, "001-A", 0, "fts content", 0.75)]
 
 
 class StubReranker:
@@ -77,6 +84,20 @@ async def test_search_rejects_wrong_embedding_dimension() -> None:
 
     with pytest.raises(ValueError, match="1024"):
         await service.search("question")
+
+
+@pytest.mark.asyncio
+async def test_fts_search_limits_results_to_thirty_without_embedding() -> None:
+    chunks = StubChunks()
+    embedder = StubEmbedder()
+    service = ChunkSearchService(make_uow_factory(chunks), embedder)
+
+    matches = await service.search_fts("matching words", limit=100)
+
+    assert chunks.fts_question == "matching words"
+    assert chunks.fts_limit == 30
+    assert embedder.texts is None
+    assert matches[0].rank == 0.75
 
 
 @pytest.mark.asyncio

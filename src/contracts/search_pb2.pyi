@@ -34,6 +34,34 @@ class SearchChunksResponse(_message.Message):
     chunks: _containers.RepeatedCompositeFieldContainer[Chunk]
     def __init__(self, chunks: _Optional[_Iterable[_Union[Chunk, _Mapping]]] = ...) -> None: ...
 
+class SearchChunksFtsRequest(_message.Message):
+    __slots__ = ("question", "limit")
+    QUESTION_FIELD_NUMBER: _ClassVar[int]
+    LIMIT_FIELD_NUMBER: _ClassVar[int]
+    question: str
+    limit: int
+    def __init__(self, question: _Optional[str] = ..., limit: _Optional[int] = ...) -> None: ...
+
+class FtsChunk(_message.Message):
+    __slots__ = ("document_id", "document_number", "chunk_number", "content", "rank")
+    DOCUMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    DOCUMENT_NUMBER_FIELD_NUMBER: _ClassVar[int]
+    CHUNK_NUMBER_FIELD_NUMBER: _ClassVar[int]
+    CONTENT_FIELD_NUMBER: _ClassVar[int]
+    RANK_FIELD_NUMBER: _ClassVar[int]
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    rank: float
+    def __init__(self, document_id: _Optional[int] = ..., document_number: _Optional[str] = ..., chunk_number: _Optional[int] = ..., content: _Optional[str] = ..., rank: _Optional[float] = ...) -> None: ...
+
+class SearchChunksFtsResponse(_message.Message):
+    __slots__ = ("chunks",)
+    CHUNKS_FIELD_NUMBER: _ClassVar[int]
+    chunks: _containers.RepeatedCompositeFieldContainer[FtsChunk]
+    def __init__(self, chunks: _Optional[_Iterable[_Union[FtsChunk, _Mapping]]] = ...) -> None: ...
+
 class RerankChunksRequest(_message.Message):
     __slots__ = ("question",)
     QUESTION_FIELD_NUMBER: _ClassVar[int]

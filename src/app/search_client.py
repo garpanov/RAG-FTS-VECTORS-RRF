@@ -30,6 +30,15 @@ class RerankedSearchChunk:
     reranker_score: float
 
 
+@dataclass(frozen=True, slots=True)
+class FtsSearchChunk:
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    rank: float
+
+
 class GrpcSearchWorkerClient:
     def __init__(self, target: str) -> None:
         self._channel = aio.insecure_channel(target)
@@ -51,6 +60,24 @@ class GrpcSearchWorkerClient:
                 distance=chunk.distance,
             )
             for chunk in cast(search_pb2.SearchChunksResponse, response).chunks
+        ]
+
+    async def search_fts(self, question: str) -> list[FtsSearchChunk]:
+        request = search_pb2.SearchChunksFtsRequest(question=question, limit=30)
+        try:
+            response = await self._stub.SearchChunksFts(request)
+        except grpc.aio.AioRpcError as error:
+            raise SearchWorkerUnavailableError from error
+
+        return [
+            FtsSearchChunk(
+                document_id=chunk.document_id,
+                document_number=chunk.document_number,
+                chunk_number=chunk.chunk_number,
+                content=chunk.content,
+                rank=chunk.rank,
+            )
+            for chunk in cast(search_pb2.SearchChunksFtsResponse, response).chunks
         ]
 
     async def rerank(self, question: str) -> list[RerankedSearchChunk]:
