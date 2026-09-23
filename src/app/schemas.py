@@ -54,3 +54,11 @@ class ChunkResponse(BaseModel):
 
 class SearchResponse(BaseModel):
     chunks: list[ChunkResponse]
+
+
+class RerankedChunkResponse(ChunkResponse):
+    reranker_score: float
+
+
+class RerankerResponse(BaseModel):
+    chunks: list[RerankedChunkResponse]

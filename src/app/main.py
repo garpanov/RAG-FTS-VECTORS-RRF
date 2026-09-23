@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from app.config import get_settings
 from app.messaging import RabbitMQDocumentTaskPublisher
-from app.routers import documents_router, search_router
+from app.routers import documents_router, reranker_router, search_router
 from app.search_client import GrpcSearchWorkerClient
 
 
@@ -30,3 +30,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Document ingestion service", lifespan=lifespan)
 app.include_router(documents_router)
 app.include_router(search_router)
+app.include_router(reranker_router)

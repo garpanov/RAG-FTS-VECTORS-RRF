@@ -13,6 +13,9 @@ class SearchWorkerSettings(BaseSettings):
     embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
     embedding_device: str = "cpu"
     embedding_batch_size: int = Field(default=8, gt=0)
+    reranker_model: str = "Qwen/Qwen3-Reranker-0.6B"
+    reranker_device: str = "cpu"
+    reranker_batch_size: int = Field(default=4, gt=0)
 
 
 @lru_cache

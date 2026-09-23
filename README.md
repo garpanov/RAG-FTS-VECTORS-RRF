@@ -6,7 +6,9 @@ worker читает документ, делит Markdown по структур�
 создаёт embeddings моделью `Qwen/Qwen3-Embedding-0.6B` и сохраняет чанки в
 PostgreSQL. Длинные ответы делятся максимум по 300 токенов с overlap 30.
 Отдельный `search-worker` принимает вопросы от API по gRPC, строит embedding
-той же моделью и возвращает до 30 ближайших чанков по cosine distance.
+той же моделью и возвращает до 30 ближайших чанков по cosine distance. Для
+реранкинга worker использует `Qwen/Qwen3-Reranker-0.6B`: оценивает 30
+кандидатов и возвращает 5 наиболее релевантных.
 
 ## Запуск
 
@@ -20,8 +22,9 @@ docker compose run --rm api alembic upgrade head
 docker compose up -d api worker search-worker
 ```
 
-При первом старте worker загрузит модель размером около 1.2 GB. Файлы модели
-сохраняются в Docker volume `huggingface_cache`.
+При первом старте workers загрузят embedding- и reranker-модели размером около
+1.2 GB каждая. Файлы моделей сохраняются в Docker volume
+`huggingface_cache`.
 
 API будет доступно на `http://localhost:8000`, Swagger UI — на
 `http://localhost:8000/docs`, RabbitMQ Management — на
@@ -56,6 +59,17 @@ curl -X POST http://localhost:8000/search \
 API передаёт вопрос в `search-worker` по gRPC. Ответ содержит до 30 чанков,
 отсортированных от наиболее близкого к менее близкому, вместе с
 `document_id`, `document_number`, `chunk_number` и cosine distance.
+
+Для поиска с реранкингом:
+
+```bash
+curl -X POST http://localhost:8000/reranker \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Какой срок действия договора?"}'
+```
+
+API вызывает отдельный gRPC-метод search-worker. Ответ содержит до 5 чанков,
+отсортированных по `reranker_score`; исходная `distance` также сохраняется.
 
 Ожидаемая структура текста документа:
 

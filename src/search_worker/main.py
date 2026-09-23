@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from contracts import search_pb2_grpc
 from search_worker.config import get_search_worker_settings
 from search_worker.grpc_service import ChunkSearchGrpcService
+from search_worker.reranking import QwenReranker
 from search_worker.services import ChunkSearchService
 from search_worker.unit_of_work import SearchUnitOfWork
 from worker.embeddings import QwenEmbeddingModel
@@ -24,9 +25,16 @@ async def run() -> None:
         settings.embedding_device,
         settings.embedding_batch_size,
     )
+    reranker = await asyncio.to_thread(
+        QwenReranker,
+        settings.reranker_model,
+        settings.reranker_device,
+        settings.reranker_batch_size,
+    )
     service = ChunkSearchService(
         lambda: SearchUnitOfWork(session_factory()),
         embedding_model,
+        reranker,
     )
     server = aio.server()
     search_pb2_grpc.add_ChunkSearchServicer_to_server(  # type: ignore[no-untyped-call]
