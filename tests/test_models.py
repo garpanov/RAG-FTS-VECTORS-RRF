@@ -1,7 +1,8 @@
 from typing import cast
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import CheckConstraint, Table
+from sqlalchemy import CheckConstraint, Computed, Table
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 from app.models import Chunk
 
@@ -14,10 +15,24 @@ def test_chunk_table_has_expected_columns() -> None:
         "chunk_number",
         "content",
         "embedding",
+        "search_vector",
     )
     assert all(not column.nullable for column in table.columns)
     assert isinstance(table.c.embedding.type, Vector)
     assert table.c.embedding.type.dim == 1024
+    assert isinstance(table.c.search_vector.type, TSVECTOR)
+    assert isinstance(table.c.search_vector.computed, Computed)
+    assert str(table.c.search_vector.computed.sqltext) == (
+        "to_tsvector('simple'::regconfig, content)"
+    )
+
+
+def test_chunk_search_vector_has_gin_index() -> None:
+    table = cast(Table, Chunk.__table__)
+    index = next(index for index in table.indexes if index.name == "ix_chunks_search_vector")
+
+    assert tuple(column.name for column in index.columns) == ("search_vector",)
+    assert index.dialect_options["postgresql"]["using"] == "gin"
 
 
 def test_chunk_primary_key_scopes_number_to_document() -> None:

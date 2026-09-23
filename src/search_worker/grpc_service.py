@@ -61,3 +61,29 @@ class ChunkSearchGrpcService(search_pb2_grpc.ChunkSearchServicer):
                 for match in matches
             ]
         )
+
+    async def SearchChunksFts(
+        self,
+        request: search_pb2.SearchChunksFtsRequest,
+        context: aio.ServicerContext[
+            search_pb2.SearchChunksFtsRequest,
+            search_pb2.SearchChunksFtsResponse,
+        ],
+    ) -> search_pb2.SearchChunksFtsResponse:
+        question = request.question.strip()
+        if not question:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "question must not be blank")
+
+        matches = await self._service.search_fts(question, request.limit or 30)
+        return search_pb2.SearchChunksFtsResponse(
+            chunks=[
+                search_pb2.FtsChunk(
+                    document_id=match.document_id,
+                    document_number=match.document_number,
+                    chunk_number=match.chunk_number,
+                    content=match.content,
+                    rank=match.rank,
+                )
+                for match in matches
+            ]
+        )

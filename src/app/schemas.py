@@ -56,6 +56,18 @@ class SearchResponse(BaseModel):
     chunks: list[ChunkResponse]
 
 
+class FtsChunkResponse(BaseModel):
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    rank: float
+
+
+class FtsResponse(BaseModel):
+    chunks: list[FtsChunkResponse]
+
+
 class RerankedChunkResponse(ChunkResponse):
     reranker_score: float
 

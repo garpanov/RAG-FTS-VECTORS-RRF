@@ -39,6 +39,11 @@ class ChunkSearchStub:
                 request_serializer=contracts_dot_search__pb2.SearchChunksRequest.SerializeToString,
                 response_deserializer=contracts_dot_search__pb2.SearchChunksResponse.FromString,
                 _registered_method=True)
+        self.SearchChunksFts = channel.unary_unary(
+                '/search.ChunkSearch/SearchChunksFts',
+                request_serializer=contracts_dot_search__pb2.SearchChunksFtsRequest.SerializeToString,
+                response_deserializer=contracts_dot_search__pb2.SearchChunksFtsResponse.FromString,
+                _registered_method=True)
         self.RerankChunks = channel.unary_unary(
                 '/search.ChunkSearch/RerankChunks',
                 request_serializer=contracts_dot_search__pb2.RerankChunksRequest.SerializeToString,
@@ -50,6 +55,12 @@ class ChunkSearchServicer:
     """Missing associated documentation comment in .proto file."""
 
     def SearchChunks(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SearchChunksFts(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -68,6 +79,11 @@ def add_ChunkSearchServicer_to_server(servicer, server):
                     servicer.SearchChunks,
                     request_deserializer=contracts_dot_search__pb2.SearchChunksRequest.FromString,
                     response_serializer=contracts_dot_search__pb2.SearchChunksResponse.SerializeToString,
+            ),
+            'SearchChunksFts': grpc.unary_unary_rpc_method_handler(
+                    servicer.SearchChunksFts,
+                    request_deserializer=contracts_dot_search__pb2.SearchChunksFtsRequest.FromString,
+                    response_serializer=contracts_dot_search__pb2.SearchChunksFtsResponse.SerializeToString,
             ),
             'RerankChunks': grpc.unary_unary_rpc_method_handler(
                     servicer.RerankChunks,
@@ -102,6 +118,33 @@ class ChunkSearch:
             '/search.ChunkSearch/SearchChunks',
             contracts_dot_search__pb2.SearchChunksRequest.SerializeToString,
             contracts_dot_search__pb2.SearchChunksResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SearchChunksFts(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/search.ChunkSearch/SearchChunksFts',
+            contracts_dot_search__pb2.SearchChunksFtsRequest.SerializeToString,
+            contracts_dot_search__pb2.SearchChunksFtsResponse.FromString,
             options,
             channel_credentials,
             insecure,

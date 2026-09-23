@@ -7,6 +7,8 @@ from app.schemas import (
     ChunkResponse,
     DocumentCreate,
     DocumentResponse,
+    FtsChunkResponse,
+    FtsResponse,
     RerankedChunkResponse,
     RerankerResponse,
     SearchRequest,
@@ -17,6 +19,7 @@ from app.services import DocumentAlreadyExistsError, DocumentService, SearchServ
 
 documents_router = APIRouter(prefix="/documents", tags=["documents"])
 search_router = APIRouter(prefix="/search", tags=["search"])
+fts_router = APIRouter(prefix="/fts", tags=["fts"])
 reranker_router = APIRouter(prefix="/reranker", tags=["reranker"])
 DocumentServiceDependency = Annotated[DocumentService, Depends(get_document_service)]
 SearchServiceDependency = Annotated[SearchService, Depends(get_search_service)]
@@ -59,6 +62,33 @@ async def search_chunks(
                 chunk_number=chunk.chunk_number,
                 content=chunk.content,
                 distance=chunk.distance,
+            )
+            for chunk in chunks
+        ]
+    )
+
+
+@fts_router.post("", response_model=FtsResponse)
+async def search_chunks_fts(
+    payload: SearchRequest,
+    service: SearchServiceDependency,
+) -> FtsResponse:
+    try:
+        chunks = await service.search_fts(payload.question)
+    except SearchWorkerUnavailableError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Search worker is unavailable",
+        ) from error
+
+    return FtsResponse(
+        chunks=[
+            FtsChunkResponse(
+                document_id=chunk.document_id,
+                document_number=chunk.document_number,
+                chunk_number=chunk.chunk_number,
+                content=chunk.content,
+                rank=chunk.rank,
             )
             for chunk in chunks
         ]

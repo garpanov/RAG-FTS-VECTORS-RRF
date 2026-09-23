@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol
 
-from search_worker.repositories import ChunkMatch
+from search_worker.repositories import ChunkMatch, FtsChunkMatch
 from search_worker.unit_of_work import SearchUnitOfWork
 
 
@@ -42,6 +42,10 @@ class ChunkSearchService:
 
         async with self._unit_of_work_factory() as unit_of_work:
             return await unit_of_work.chunks.find_nearest(embeddings[0], min(limit, 30))
+
+    async def search_fts(self, question: str, limit: int = 30) -> list[FtsChunkMatch]:
+        async with self._unit_of_work_factory() as unit_of_work:
+            return await unit_of_work.chunks.find_fts(question, min(limit, 30))
 
     async def rerank(self, question: str) -> list[RerankedChunkMatch]:
         if self._reranker is None:
