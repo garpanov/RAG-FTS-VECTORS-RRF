@@ -4,14 +4,17 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
+    Computed,
     DateTime,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     Text,
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -39,6 +42,7 @@ class Chunk(Base):
     __tablename__ = "chunks"
     __table_args__ = (
         CheckConstraint("chunk_number >= 0", name="ck_chunks_chunk_number_nonnegative"),
+        Index("ix_chunks_search_vector", "search_vector", postgresql_using="gin"),
     )
 
     document_id: Mapped[int] = mapped_column(
@@ -49,3 +53,8 @@ class Chunk(Base):
     chunk_number: Mapped[int] = mapped_column(Integer, primary_key=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(1024), nullable=False)
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        Computed("to_tsvector('simple'::regconfig, content)", persisted=True),
+        nullable=False,
+    )
