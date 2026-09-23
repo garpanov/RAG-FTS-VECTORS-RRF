@@ -49,6 +49,11 @@ class ChunkSearchStub:
                 request_serializer=contracts_dot_search__pb2.RerankChunksRequest.SerializeToString,
                 response_deserializer=contracts_dot_search__pb2.RerankChunksResponse.FromString,
                 _registered_method=True)
+        self.HybridSearch = channel.unary_unary(
+                '/search.ChunkSearch/HybridSearch',
+                request_serializer=contracts_dot_search__pb2.HybridSearchRequest.SerializeToString,
+                response_deserializer=contracts_dot_search__pb2.HybridSearchResponse.FromString,
+                _registered_method=True)
 
 
 class ChunkSearchServicer:
@@ -72,6 +77,12 @@ class ChunkSearchServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HybridSearch(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChunkSearchServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -89,6 +100,11 @@ def add_ChunkSearchServicer_to_server(servicer, server):
                     servicer.RerankChunks,
                     request_deserializer=contracts_dot_search__pb2.RerankChunksRequest.FromString,
                     response_serializer=contracts_dot_search__pb2.RerankChunksResponse.SerializeToString,
+            ),
+            'HybridSearch': grpc.unary_unary_rpc_method_handler(
+                    servicer.HybridSearch,
+                    request_deserializer=contracts_dot_search__pb2.HybridSearchRequest.FromString,
+                    response_serializer=contracts_dot_search__pb2.HybridSearchResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -172,6 +188,33 @@ class ChunkSearch:
             '/search.ChunkSearch/RerankChunks',
             contracts_dot_search__pb2.RerankChunksRequest.SerializeToString,
             contracts_dot_search__pb2.RerankChunksResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def HybridSearch(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/search.ChunkSearch/HybridSearch',
+            contracts_dot_search__pb2.HybridSearchRequest.SerializeToString,
+            contracts_dot_search__pb2.HybridSearchResponse.FromString,
             options,
             channel_credentials,
             insecure,

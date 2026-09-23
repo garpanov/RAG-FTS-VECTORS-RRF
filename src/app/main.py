@@ -5,7 +5,13 @@ from fastapi import FastAPI
 
 from app.config import get_settings
 from app.messaging import RabbitMQDocumentTaskPublisher
-from app.routers import documents_router, fts_router, reranker_router, search_router
+from app.routers import (
+    documents_router,
+    fts_router,
+    hybrid_search_router,
+    reranker_router,
+    search_router,
+)
 from app.search_client import GrpcSearchWorkerClient
 
 
@@ -32,3 +38,4 @@ app.include_router(documents_router)
 app.include_router(search_router)
 app.include_router(fts_router)
 app.include_router(reranker_router)
+app.include_router(hybrid_search_router)

@@ -7,6 +7,7 @@ from app.dependencies import get_search_service
 from app.main import app
 from app.search_client import (
     FtsSearchChunk,
+    HybridSearchChunk,
     RerankedSearchChunk,
     SearchChunk,
     SearchWorkerUnavailableError,
@@ -58,6 +59,21 @@ class StubSearchService:
                 chunk_number=1,
                 content="full-text chunk",
                 rank=0.75,
+            )
+        ]
+
+    async def hybrid_search(self, question: str) -> list[HybridSearchChunk]:
+        self.question = question
+        if self.unavailable:
+            raise SearchWorkerUnavailableError
+        return [
+            HybridSearchChunk(
+                document_id=42,
+                document_number="001-A",
+                chunk_number=1,
+                content="hybrid chunk",
+                rrf_score=0.0325,
+                reranker_score=0.98,
             )
         ]
 
@@ -176,6 +192,41 @@ async def test_reranker_returns_service_unavailable() -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post("/reranker", json={"question": "question"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_hybrid_search_returns_reranked_chunks(search_service: StubSearchService) -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/hybrid_search", json={"question": "  my question  "})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "chunks": [
+            {
+                "document_id": 42,
+                "document_number": "001-A",
+                "chunk_number": 1,
+                "content": "hybrid chunk",
+                "rrf_score": 0.0325,
+                "reranker_score": 0.98,
+            }
+        ]
+    }
+    assert search_service.question == "my question"
+
+
+@pytest.mark.asyncio
+async def test_hybrid_search_returns_service_unavailable() -> None:
+    app.dependency_overrides[get_search_service] = lambda: StubSearchService(unavailable=True)
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post("/hybrid_search", json={"question": "question"})
     finally:
         app.dependency_overrides.clear()
 

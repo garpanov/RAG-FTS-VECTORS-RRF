@@ -39,6 +39,16 @@ class FtsSearchChunk:
     rank: float
 
 
+@dataclass(frozen=True, slots=True)
+class HybridSearchChunk:
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    rrf_score: float
+    reranker_score: float
+
+
 class GrpcSearchWorkerClient:
     def __init__(self, target: str) -> None:
         self._channel = aio.insecure_channel(target)
@@ -97,6 +107,25 @@ class GrpcSearchWorkerClient:
                 reranker_score=chunk.reranker_score,
             )
             for chunk in cast(search_pb2.RerankChunksResponse, response).chunks
+        ]
+
+    async def hybrid_search(self, question: str) -> list[HybridSearchChunk]:
+        request = search_pb2.HybridSearchRequest(question=question)
+        try:
+            response = await self._stub.HybridSearch(request)
+        except grpc.aio.AioRpcError as error:
+            raise SearchWorkerUnavailableError from error
+
+        return [
+            HybridSearchChunk(
+                document_id=chunk.document_id,
+                document_number=chunk.document_number,
+                chunk_number=chunk.chunk_number,
+                content=chunk.content,
+                rrf_score=chunk.rrf_score,
+                reranker_score=chunk.reranker_score,
+            )
+            for chunk in cast(search_pb2.HybridSearchResponse, response).chunks
         ]
 
     async def close(self) -> None:

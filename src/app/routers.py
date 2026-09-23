@@ -9,6 +9,8 @@ from app.schemas import (
     DocumentResponse,
     FtsChunkResponse,
     FtsResponse,
+    HybridChunkResponse,
+    HybridSearchResponse,
     RerankedChunkResponse,
     RerankerResponse,
     SearchRequest,
@@ -21,6 +23,7 @@ documents_router = APIRouter(prefix="/documents", tags=["documents"])
 search_router = APIRouter(prefix="/search", tags=["search"])
 fts_router = APIRouter(prefix="/fts", tags=["fts"])
 reranker_router = APIRouter(prefix="/reranker", tags=["reranker"])
+hybrid_search_router = APIRouter(prefix="/hybrid_search", tags=["hybrid-search"])
 DocumentServiceDependency = Annotated[DocumentService, Depends(get_document_service)]
 SearchServiceDependency = Annotated[SearchService, Depends(get_search_service)]
 
@@ -116,6 +119,34 @@ async def rerank_chunks(
                 chunk_number=chunk.chunk_number,
                 content=chunk.content,
                 distance=chunk.distance,
+                reranker_score=chunk.reranker_score,
+            )
+            for chunk in chunks
+        ]
+    )
+
+
+@hybrid_search_router.post("", response_model=HybridSearchResponse)
+async def hybrid_search_chunks(
+    payload: SearchRequest,
+    service: SearchServiceDependency,
+) -> HybridSearchResponse:
+    try:
+        chunks = await service.hybrid_search(payload.question)
+    except SearchWorkerUnavailableError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Search worker is unavailable",
+        ) from error
+
+    return HybridSearchResponse(
+        chunks=[
+            HybridChunkResponse(
+                document_id=chunk.document_id,
+                document_number=chunk.document_number,
+                chunk_number=chunk.chunk_number,
+                content=chunk.content,
+                rrf_score=chunk.rrf_score,
                 reranker_score=chunk.reranker_score,
             )
             for chunk in chunks

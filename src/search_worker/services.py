@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -21,6 +21,16 @@ class RerankedChunkMatch:
     chunk_number: int
     content: str
     distance: float
+    reranker_score: float
+
+
+@dataclass(frozen=True, slots=True)
+class HybridChunkMatch:
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    rrf_score: float
     reranker_score: float
 
 
@@ -78,3 +88,61 @@ class ChunkSearchService:
             )
             for candidate, score in ranked[:5]
         ]
+
+    async def hybrid_search(self, question: str) -> list[HybridChunkMatch]:
+        if self._reranker is None:
+            raise RuntimeError("Reranker is not configured")
+
+        fts_candidates = await self.search_fts(question, limit=30)
+        vector_candidates = await self.search(question, limit=30)
+        fused_candidates = self._reciprocal_rank_fusion(fts_candidates, vector_candidates)
+        if not fused_candidates:
+            return []
+
+        scores = await self._reranker.rerank(
+            question,
+            [candidate.content for candidate, _ in fused_candidates],
+        )
+        if len(scores) != len(fused_candidates):
+            raise ValueError("Reranker must return one score per chunk")
+
+        ranked = sorted(
+            zip(fused_candidates, scores, strict=True),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        return [
+            HybridChunkMatch(
+                document_id=candidate.document_id,
+                document_number=candidate.document_number,
+                chunk_number=candidate.chunk_number,
+                content=candidate.content,
+                rrf_score=rrf_score,
+                reranker_score=reranker_score,
+            )
+            for (candidate, rrf_score), reranker_score in ranked[:5]
+        ]
+
+    @staticmethod
+    def _reciprocal_rank_fusion(
+        fts_candidates: list[FtsChunkMatch],
+        vector_candidates: list[ChunkMatch],
+        rank_constant: int = 60,
+    ) -> list[tuple[FtsChunkMatch | ChunkMatch, float]]:
+        candidates: dict[tuple[int, int], FtsChunkMatch | ChunkMatch] = {}
+        scores: dict[tuple[int, int], float] = {}
+
+        def add_scores(ranked_candidates: Sequence[FtsChunkMatch | ChunkMatch]) -> None:
+            for rank, candidate in enumerate(ranked_candidates, start=1):
+                key = (candidate.document_id, candidate.chunk_number)
+                candidates.setdefault(key, candidate)
+                scores[key] = scores.get(key, 0.0) + 1.0 / (rank_constant + rank)
+
+        add_scores(fts_candidates)
+        add_scores(vector_candidates)
+
+        return sorted(
+            ((candidates[key], score) for key, score in scores.items()),
+            key=lambda item: item[1],
+            reverse=True,
+        )

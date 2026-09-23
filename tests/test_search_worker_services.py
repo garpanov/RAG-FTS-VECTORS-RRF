@@ -19,22 +19,36 @@ class StubEmbedder:
 
 
 class StubChunks:
-    def __init__(self, matches: list[ChunkMatch] | None = None) -> None:
+    def __init__(
+        self,
+        matches: list[ChunkMatch] | None = None,
+        fts_matches: list[FtsChunkMatch] | None = None,
+    ) -> None:
         self.embedding: list[float] | None = None
         self.limit: int | None = None
-        self.matches = matches or [ChunkMatch(1, "001-A", 0, "content", 0.1)]
+        self.matches = (
+            matches if matches is not None else [ChunkMatch(1, "001-A", 0, "content", 0.1)]
+        )
+        self.fts_matches = (
+            fts_matches
+            if fts_matches is not None
+            else [FtsChunkMatch(1, "001-A", 0, "fts content", 0.75)]
+        )
         self.fts_question: str | None = None
         self.fts_limit: int | None = None
+        self.calls: list[str] = []
 
     async def find_nearest(self, embedding: list[float], limit: int) -> list[ChunkMatch]:
+        self.calls.append("vector")
         self.embedding = embedding
         self.limit = limit
         return self.matches
 
     async def find_fts(self, question: str, limit: int) -> list[FtsChunkMatch]:
+        self.calls.append("fts")
         self.fts_question = question
         self.fts_limit = limit
-        return [FtsChunkMatch(1, "001-A", 0, "fts content", 0.75)]
+        return self.fts_matches
 
 
 class StubReranker:
@@ -129,3 +143,48 @@ async def test_rerank_rejects_wrong_number_of_scores() -> None:
 
     with pytest.raises(ValueError, match="one score per chunk"):
         await service.rerank("question")
+
+
+@pytest.mark.asyncio
+async def test_hybrid_search_fuses_fts_and_vector_then_returns_top_five() -> None:
+    vector_candidates = [
+        ChunkMatch(index, f"doc-{index}", index, f"content-{index}", index / 100)
+        for index in range(1, 7)
+    ]
+    fts_candidates = [
+        FtsChunkMatch(2, "doc-2", 2, "content-2", 0.9),
+        FtsChunkMatch(7, "doc-7", 7, "content-7", 0.8),
+        FtsChunkMatch(1, "doc-1", 1, "content-1", 0.7),
+    ]
+    chunks = StubChunks(vector_candidates, fts_candidates)
+    reranker = StubReranker([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7])
+    service = ChunkSearchService(make_uow_factory(chunks), StubEmbedder(), reranker)
+
+    matches = await service.hybrid_search("question")
+
+    assert chunks.calls == ["fts", "vector"]
+    assert chunks.fts_limit == 30
+    assert chunks.limit == 30
+    assert reranker.contents == [
+        "content-2",
+        "content-1",
+        "content-7",
+        "content-3",
+        "content-4",
+        "content-5",
+        "content-6",
+    ]
+    assert [match.chunk_number for match in matches] == [6, 5, 4, 3, 7]
+    assert all(match.rrf_score > 0 for match in matches)
+
+
+@pytest.mark.asyncio
+async def test_hybrid_search_returns_empty_without_reranking() -> None:
+    chunks = StubChunks(matches=[], fts_matches=[])
+    reranker = StubReranker([])
+    service = ChunkSearchService(make_uow_factory(chunks), StubEmbedder(), reranker)
+
+    matches = await service.hybrid_search("question")
+
+    assert matches == []
+    assert reranker.contents is None
