@@ -8,7 +8,9 @@ dependencies = [
     "aio-pika>=9.5.7",
     "alembic>=1.16.5",
     "fastapi>=0.116.1",
+    "grpcio>=1.84.0",
     "pgvector>=0.4.1",
+    "protobuf>=7.35.1",
     "psycopg[binary]>=3.2.10",
     "pydantic-settings>=2.10.1",
     "sqlalchemy[asyncio]>=2.0.43",
@@ -18,10 +20,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "httpx>=0.28.1",
+    "grpcio-tools>=1.84.0",
     "mypy>=1.17.1",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.1.0",
     "ruff>=0.12.11",
+    "types-grpcio>=1.0.0",
 ]
 worker = [
     "sentence-transformers>=2.7.0",
@@ -38,6 +42,7 @@ where = ["src"]
 [tool.ruff]
 target-version = "py314"
 line-length = 100
+extend-exclude = ["src/contracts/search_pb2*"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC"]
@@ -45,8 +50,9 @@ select = ["E", "F", "I", "UP", "B", "ASYNC"]
 [tool.mypy]
 python_version = "3.14"
 strict = true
-packages = ["app", "worker"]
+packages = ["app", "worker", "search_worker"]
 mypy_path = "src"
+exclude = ["src/contracts/search_pb2.*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -7,6 +7,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-rag_user}:${RABBITMQ_PASSWORD:-change-me}@rabbitmq:5672/
+      SEARCH_WORKER_TARGET: search-worker:50051
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
@@ -14,6 +15,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      search-worker:
+        condition: service_started
 
   worker:
     build:
@@ -35,6 +38,26 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  search-worker:
+    build:
+      context: .
+      target: search-worker
+    command: ["python", "-m", "search_worker.main"]
+    restart: ${SEARCH_WORKER_RESTART_POLICY:-unless-stopped}
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: 50051
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-Qwen/Qwen3-Embedding-0.6B}
+      EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
+      EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-8}
+      HF_HOME: /root/.cache/huggingface
+    volumes:
+      - huggingface_cache:/root/.cache/huggingface
+    depends_on:
       postgres:
         condition: service_healthy
 

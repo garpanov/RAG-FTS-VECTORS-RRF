@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_url: PostgresDsn
     rabbitmq_url: AmqpDsn
     document_chunking_queue: str = DOCUMENT_CHUNKING_QUEUE
+    search_worker_target: str = "localhost:50051"
 
 
 @lru_cache

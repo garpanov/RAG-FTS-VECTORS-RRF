@@ -17,6 +17,12 @@ RUN pip install --no-cache-dir ".[worker]"
 
 CMD ["python", "-m", "worker.main"]
 
+FROM worker AS search-worker
+
+EXPOSE 50051
+
+CMD ["python", "-m", "search_worker.main"]
+
 FROM base AS api
 
 RUN pip install --no-cache-dir .

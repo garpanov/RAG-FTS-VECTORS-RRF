@@ -5,6 +5,8 @@
 worker читает документ, делит Markdown по структуре `#` / `##` / `###`,
 создаёт embeddings моделью `Qwen/Qwen3-Embedding-0.6B` и сохраняет чанки в
 PostgreSQL. Длинные ответы делятся максимум по 300 токенов с overlap 30.
+Отдельный `search-worker` принимает вопросы от API по gRPC, строит embedding
+той же моделью и возвращает три ближайших чанка по cosine distance.
 
 ## Запуск
 
@@ -12,10 +14,10 @@ PostgreSQL. Длинные ответы делятся максимум по 300
 и запустите инфраструктуру:
 
 ```bash
-docker compose build api worker
+docker compose build api worker search-worker
 docker compose up -d postgres rabbitmq
 docker compose run --rm api alembic upgrade head
-docker compose up -d api worker
+docker compose up -d api worker search-worker
 ```
 
 При первом старте worker загрузит модель размером около 1.2 GB. Файлы модели
@@ -43,6 +45,18 @@ curl -X POST http://localhost:8000/documents \
 Успешный запрос возвращает `201 Created`. Повторный `document_number`
 возвращает `409 Conflict`, пустые значения — `422 Unprocessable Entity`.
 
+Для семантического поиска по уже обработанным документам:
+
+```bash
+curl -X POST http://localhost:8000/search \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Какой срок действия договора?"}'
+```
+
+API передаёт вопрос в `search-worker` по gRPC. Ответ содержит до трёх чанков,
+отсортированных от наиболее близкого к менее близкому, вместе с
+`document_id`, `document_number`, `chunk_number` и cosine distance.
+
 Ожидаемая структура текста документа:
 
 ```markdown
@@ -67,6 +81,8 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
 # В другом терминале:
 uv run python -m worker.main
+# И ещё в одном терминале:
+uv run python -m search_worker.main
 ```
 
 Проверки:
