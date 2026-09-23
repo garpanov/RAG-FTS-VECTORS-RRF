@@ -30,15 +30,28 @@ class QwenEmbeddingModel:
             return []
         return await asyncio.to_thread(self._embed_sync, texts)
 
-    def _embed_sync(self, texts: list[str]) -> list[list[float]]:
+    async def embed_query(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        return await asyncio.to_thread(self._embed_sync, texts, prompt_name="query")
+
+    def _embed_sync(
+        self,
+        texts: list[str],
+        *,
+        prompt_name: str | None = None,
+    ) -> list[list[float]]:
+        encode_kwargs: dict[str, Any] = {
+            "batch_size": self._batch_size,
+            "convert_to_numpy": True,
+            "normalize_embeddings": True,
+            "show_progress_bar": False,
+        }
+        if prompt_name is not None:
+            encode_kwargs["prompt_name"] = prompt_name
+
         embeddings = cast(
             Any,
-            self._model.encode(
-                texts,
-                batch_size=self._batch_size,
-                convert_to_numpy=True,
-                normalize_embeddings=True,
-                show_progress_bar=False,
-            ),
+            self._model.encode(texts, **encode_kwargs),
         )
         return cast(list[list[float]], embeddings.tolist())

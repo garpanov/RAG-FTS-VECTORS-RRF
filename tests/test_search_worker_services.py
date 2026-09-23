@@ -13,7 +13,7 @@ class StubEmbedder:
         self.dimensions = dimensions
         self.texts: list[str] | None = None
 
-    async def embed(self, texts: list[str]) -> list[list[float]]:
+    async def embed_query(self, texts: list[str]) -> list[list[float]]:
         self.texts = texts
         return [[0.5] * self.dimensions]
 

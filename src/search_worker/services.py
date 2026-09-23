@@ -6,7 +6,7 @@ from search_worker.unit_of_work import SearchUnitOfWork
 
 
 class Embedder(Protocol):
-    async def embed(self, texts: list[str]) -> list[list[float]]: ...
+    async def embed_query(self, texts: list[str]) -> list[list[float]]: ...
 
 
 class ChunkSearchService:
@@ -19,7 +19,7 @@ class ChunkSearchService:
         self._embedder = embedder
 
     async def search(self, question: str, limit: int = 3) -> list[ChunkMatch]:
-        embeddings = await self._embedder.embed([question])
+        embeddings = await self._embedder.embed_query([question])
         if len(embeddings) != 1 or len(embeddings[0]) != 1024:
             raise ValueError("Question embedding must contain 1024 dimensions")
 
