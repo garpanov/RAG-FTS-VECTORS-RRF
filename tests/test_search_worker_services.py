@@ -19,14 +19,27 @@ class StubEmbedder:
 
 
 class StubChunks:
-    def __init__(self) -> None:
+    def __init__(self, matches: list[ChunkMatch] | None = None) -> None:
         self.embedding: list[float] | None = None
         self.limit: int | None = None
+        self.matches = matches or [ChunkMatch(1, "001-A", 0, "content", 0.1)]
 
     async def find_nearest(self, embedding: list[float], limit: int) -> list[ChunkMatch]:
         self.embedding = embedding
         self.limit = limit
-        return [ChunkMatch(1, "001-A", 0, "content", 0.1)]
+        return self.matches
+
+
+class StubReranker:
+    def __init__(self, scores: list[float]) -> None:
+        self.scores = scores
+        self.question: str | None = None
+        self.contents: list[str] | None = None
+
+    async def rerank(self, question: str, chunks: list[str]) -> list[float]:
+        self.question = question
+        self.contents = chunks
+        return self.scores
 
 
 class StubUnitOfWork:
@@ -45,16 +58,16 @@ def make_uow_factory(chunks: StubChunks) -> Callable[[], SearchUnitOfWork]:
 
 
 @pytest.mark.asyncio
-async def test_search_embeds_question_and_limits_results_to_three() -> None:
+async def test_search_embeds_question_and_limits_results_to_thirty() -> None:
     chunks = StubChunks()
     embedder = StubEmbedder()
     service = ChunkSearchService(make_uow_factory(chunks), embedder)
 
-    matches = await service.search("question", limit=10)
+    matches = await service.search("question", limit=100)
 
     assert embedder.texts == ["question"]
     assert chunks.embedding == [0.5] * 1024
-    assert chunks.limit == 3
+    assert chunks.limit == 30
     assert matches[0].content == "content"
 
 
@@ -64,3 +77,34 @@ async def test_search_rejects_wrong_embedding_dimension() -> None:
 
     with pytest.raises(ValueError, match="1024"):
         await service.search("question")
+
+
+@pytest.mark.asyncio
+async def test_rerank_retrieves_thirty_candidates_and_returns_top_five() -> None:
+    candidates = [
+        ChunkMatch(index, f"doc-{index}", index, f"content-{index}", index / 100)
+        for index in range(6)
+    ]
+    chunks = StubChunks(candidates)
+    reranker = StubReranker([0.1, 0.9, 0.2, 0.8, 0.3, 0.7])
+    service = ChunkSearchService(make_uow_factory(chunks), StubEmbedder(), reranker)
+
+    matches = await service.rerank("question")
+
+    assert chunks.limit == 30
+    assert reranker.question == "question"
+    assert reranker.contents == [candidate.content for candidate in candidates]
+    assert [match.chunk_number for match in matches] == [1, 3, 5, 4, 2]
+    assert [match.reranker_score for match in matches] == [0.9, 0.8, 0.7, 0.3, 0.2]
+
+
+@pytest.mark.asyncio
+async def test_rerank_rejects_wrong_number_of_scores() -> None:
+    service = ChunkSearchService(
+        make_uow_factory(StubChunks()),
+        StubEmbedder(),
+        StubReranker([]),
+    )
+
+    with pytest.raises(ValueError, match="one score per chunk"):
+        await service.rerank("question")

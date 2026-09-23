@@ -28,7 +28,7 @@ dev = [
     "types-grpcio>=1.0.0",
 ]
 worker = [
-    "sentence-transformers>=2.7.0",
+    "sentence-transformers>=5.4.0",
     "transformers>=4.51.0",
 ]
 

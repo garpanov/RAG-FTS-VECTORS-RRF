@@ -3,7 +3,7 @@ from typing import Protocol
 from app.messaging import DocumentTaskPublisher
 from app.models import Document
 from app.repositories import DocumentNumberConflictError
-from app.search_client import SearchChunk
+from app.search_client import RerankedSearchChunk, SearchChunk
 from app.unit_of_work import UnitOfWork
 
 
@@ -34,6 +34,8 @@ class DocumentService:
 class SearchClient(Protocol):
     async def search(self, question: str) -> list[SearchChunk]: ...
 
+    async def rerank(self, question: str) -> list[RerankedSearchChunk]: ...
+
 
 class SearchService:
     def __init__(self, client: SearchClient) -> None:
@@ -41,3 +43,6 @@ class SearchService:
 
     async def search(self, question: str) -> list[SearchChunk]:
         return await self._client.search(question)
+
+    async def rerank(self, question: str) -> list[RerankedSearchChunk]:
+        return await self._client.rerank(question)

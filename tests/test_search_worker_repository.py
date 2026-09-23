@@ -23,7 +23,7 @@ async def test_repository_returns_nearest_chunk_rows() -> None:
     session.execute = AsyncMock(return_value=result)
     repository = ChunkSearchRepository(session)
 
-    matches = await repository.find_nearest([0.5] * 1024, 3)
+    matches = await repository.find_nearest([0.5] * 1024, 30)
 
     assert len(matches) == 1
     assert matches[0].document_number == "001-A"

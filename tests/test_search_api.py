@@ -5,7 +5,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.dependencies import get_search_service
 from app.main import app
-from app.search_client import SearchChunk, SearchWorkerUnavailableError
+from app.search_client import RerankedSearchChunk, SearchChunk, SearchWorkerUnavailableError
 
 
 class StubSearchService:
@@ -24,6 +24,21 @@ class StubSearchService:
                 chunk_number=1,
                 content="closest chunk",
                 distance=0.125,
+            )
+        ]
+
+    async def rerank(self, question: str) -> list[RerankedSearchChunk]:
+        self.question = question
+        if self.unavailable:
+            raise SearchWorkerUnavailableError
+        return [
+            RerankedSearchChunk(
+                document_id=42,
+                document_number="001-A",
+                chunk_number=1,
+                content="reranked chunk",
+                distance=0.125,
+                reranker_score=0.95,
             )
         ]
 
@@ -73,6 +88,41 @@ async def test_search_returns_service_unavailable() -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post("/search", json={"question": "question"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_reranker_returns_reranked_chunks(search_service: StubSearchService) -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/reranker", json={"question": "  my question  "})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "chunks": [
+            {
+                "document_id": 42,
+                "document_number": "001-A",
+                "chunk_number": 1,
+                "content": "reranked chunk",
+                "distance": 0.125,
+                "reranker_score": 0.95,
+            }
+        ]
+    }
+    assert search_service.question == "my question"
+
+
+@pytest.mark.asyncio
+async def test_reranker_returns_service_unavailable() -> None:
+    app.dependency_overrides[get_search_service] = lambda: StubSearchService(unavailable=True)
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post("/reranker", json={"question": "question"})
     finally:
         app.dependency_overrides.clear()
 

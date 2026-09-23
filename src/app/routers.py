@@ -7,6 +7,8 @@ from app.schemas import (
     ChunkResponse,
     DocumentCreate,
     DocumentResponse,
+    RerankedChunkResponse,
+    RerankerResponse,
     SearchRequest,
     SearchResponse,
 )
@@ -15,6 +17,7 @@ from app.services import DocumentAlreadyExistsError, DocumentService, SearchServ
 
 documents_router = APIRouter(prefix="/documents", tags=["documents"])
 search_router = APIRouter(prefix="/search", tags=["search"])
+reranker_router = APIRouter(prefix="/reranker", tags=["reranker"])
 DocumentServiceDependency = Annotated[DocumentService, Depends(get_document_service)]
 SearchServiceDependency = Annotated[SearchService, Depends(get_search_service)]
 
@@ -56,6 +59,34 @@ async def search_chunks(
                 chunk_number=chunk.chunk_number,
                 content=chunk.content,
                 distance=chunk.distance,
+            )
+            for chunk in chunks
+        ]
+    )
+
+
+@reranker_router.post("", response_model=RerankerResponse)
+async def rerank_chunks(
+    payload: SearchRequest,
+    service: SearchServiceDependency,
+) -> RerankerResponse:
+    try:
+        chunks = await service.rerank(payload.question)
+    except SearchWorkerUnavailableError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Search worker is unavailable",
+        ) from error
+
+    return RerankerResponse(
+        chunks=[
+            RerankedChunkResponse(
+                document_id=chunk.document_id,
+                document_number=chunk.document_number,
+                chunk_number=chunk.chunk_number,
+                content=chunk.content,
+                distance=chunk.distance,
+                reranker_score=chunk.reranker_score,
             )
             for chunk in chunks
         ]
