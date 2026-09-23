@@ -71,6 +71,18 @@ curl -X POST http://localhost:8000/reranker \
 API вызывает отдельный gRPC-метод search-worker. Ответ содержит до 5 чанков,
 отсортированных по `reranker_score`; исходная `distance` также сохраняется.
 
+Для гибридного поиска:
+
+```bash
+curl -X POST http://localhost:8000/hybrid_search \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Какой срок действия договора?"}'
+```
+
+Search-worker последовательно получает до 30 FTS- и до 30 vector-кандидатов,
+объединяет их через Reciprocal Rank Fusion (`k=60`), дедуплицирует и прогоняет
+через reranker. Ответ содержит до 5 чанков с `rrf_score` и `reranker_score`.
+
 Ожидаемая структура текста документа:
 
 ```markdown

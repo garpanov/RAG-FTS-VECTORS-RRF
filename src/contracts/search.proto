@@ -6,6 +6,7 @@ service ChunkSearch {
   rpc SearchChunks(SearchChunksRequest) returns (SearchChunksResponse);
   rpc SearchChunksFts(SearchChunksFtsRequest) returns (SearchChunksFtsResponse);
   rpc RerankChunks(RerankChunksRequest) returns (RerankChunksResponse);
+  rpc HybridSearch(HybridSearchRequest) returns (HybridSearchResponse);
 }
 
 message SearchChunksRequest {
@@ -57,4 +58,21 @@ message RerankedChunk {
 
 message RerankChunksResponse {
   repeated RerankedChunk chunks = 1;
+}
+
+message HybridSearchRequest {
+  string question = 1;
+}
+
+message HybridChunk {
+  int64 document_id = 1;
+  string document_number = 2;
+  int32 chunk_number = 3;
+  string content = 4;
+  double rrf_score = 5;
+  double reranker_score = 6;
+}
+
+message HybridSearchResponse {
+  repeated HybridChunk chunks = 1;
 }

@@ -89,3 +89,31 @@ class RerankChunksResponse(_message.Message):
     CHUNKS_FIELD_NUMBER: _ClassVar[int]
     chunks: _containers.RepeatedCompositeFieldContainer[RerankedChunk]
     def __init__(self, chunks: _Optional[_Iterable[_Union[RerankedChunk, _Mapping]]] = ...) -> None: ...
+
+class HybridSearchRequest(_message.Message):
+    __slots__ = ("question",)
+    QUESTION_FIELD_NUMBER: _ClassVar[int]
+    question: str
+    def __init__(self, question: _Optional[str] = ...) -> None: ...
+
+class HybridChunk(_message.Message):
+    __slots__ = ("document_id", "document_number", "chunk_number", "content", "rrf_score", "reranker_score")
+    DOCUMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    DOCUMENT_NUMBER_FIELD_NUMBER: _ClassVar[int]
+    CHUNK_NUMBER_FIELD_NUMBER: _ClassVar[int]
+    CONTENT_FIELD_NUMBER: _ClassVar[int]
+    RRF_SCORE_FIELD_NUMBER: _ClassVar[int]
+    RERANKER_SCORE_FIELD_NUMBER: _ClassVar[int]
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    rrf_score: float
+    reranker_score: float
+    def __init__(self, document_id: _Optional[int] = ..., document_number: _Optional[str] = ..., chunk_number: _Optional[int] = ..., content: _Optional[str] = ..., rrf_score: _Optional[float] = ..., reranker_score: _Optional[float] = ...) -> None: ...
+
+class HybridSearchResponse(_message.Message):
+    __slots__ = ("chunks",)
+    CHUNKS_FIELD_NUMBER: _ClassVar[int]
+    chunks: _containers.RepeatedCompositeFieldContainer[HybridChunk]
+    def __init__(self, chunks: _Optional[_Iterable[_Union[HybridChunk, _Mapping]]] = ...) -> None: ...

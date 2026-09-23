@@ -87,3 +87,30 @@ class ChunkSearchGrpcService(search_pb2_grpc.ChunkSearchServicer):
                 for match in matches
             ]
         )
+
+    async def HybridSearch(
+        self,
+        request: search_pb2.HybridSearchRequest,
+        context: aio.ServicerContext[
+            search_pb2.HybridSearchRequest,
+            search_pb2.HybridSearchResponse,
+        ],
+    ) -> search_pb2.HybridSearchResponse:
+        question = request.question.strip()
+        if not question:
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "question must not be blank")
+
+        matches = await self._service.hybrid_search(question)
+        return search_pb2.HybridSearchResponse(
+            chunks=[
+                search_pb2.HybridChunk(
+                    document_id=match.document_id,
+                    document_number=match.document_number,
+                    chunk_number=match.chunk_number,
+                    content=match.content,
+                    rrf_score=match.rrf_score,
+                    reranker_score=match.reranker_score,
+                )
+                for match in matches
+            ]
+        )

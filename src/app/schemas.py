@@ -74,3 +74,16 @@ class RerankedChunkResponse(ChunkResponse):
 
 class RerankerResponse(BaseModel):
     chunks: list[RerankedChunkResponse]
+
+
+class HybridChunkResponse(BaseModel):
+    document_id: int
+    document_number: str
+    chunk_number: int
+    content: str
+    rrf_score: float
+    reranker_score: float
+
+
+class HybridSearchResponse(BaseModel):
+    chunks: list[HybridChunkResponse]
